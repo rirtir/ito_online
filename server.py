@@ -2,6 +2,8 @@
 import os, uuid, json, asyncio, random
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from game import Game
 
@@ -24,10 +26,13 @@ app.state.base_dir = os.path.dirname(os.path.abspath(__file__))
 
 app.state.game = Game()
 
+# "static" というフォルダに index.html / game.html を置く
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
+# ルートアクセス時に index.html を返す
+
 @app.get("/")
-async def get():
-    with open(os.path.join(app.state.base_dir, "index.html"), "r", encoding="utf-8") as f:
-        return HTMLResponse(f.read())
+async def root():
+    return FileResponse("static/index.html")
 
 
 async def send_safe(ws: WebSocket, message: dict):
