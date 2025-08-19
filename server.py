@@ -26,15 +26,6 @@ app.state.base_dir = os.path.dirname(os.path.abspath(__file__))
 
 app.state.game = Game()
 
-# "static" というフォルダに index.html / game.html を置く
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
-# ルートアクセス時に index.html を返す
-
-@app.get("/")
-async def root():
-    return FileResponse("static/index.html")
-
-
 async def send_safe(ws: WebSocket, message: dict):
     try:
         await ws.send_text(json.dumps(message))
@@ -388,6 +379,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 # なのでここでは connected=False にしておくだけでOK
                 await broadcast("PLAYER_DISCONNECTED", "user_id", uid)
         return
+    
+
+# "static" というフォルダに index.html / game.html を置く
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
+# ルートアクセス時に index.html を返す
+
+@app.get("/")
+async def root():
+    return FileResponse("static/index.html")
 
 
 if __name__ == "__main__":
