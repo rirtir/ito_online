@@ -11,6 +11,135 @@
     .slot { margin: 2px 0; }
     .area { margin-top: 12px; padding: 8px; border: 1px solid #eee; border-radius: 6px; }
     button { padding: 6px 10px; }
+
+    body {
+      font-family: "Segoe UI", "Hiragino Sans", sans-serif;
+      padding: 2vh 3vw;
+      background: #f5f7fa;
+      color: #333;
+      font-size: 1.2vw;
+    }
+
+    h2 {
+      margin-bottom: 1vh;
+      font-size: 2vw;
+      color: #2c3e50;
+    }
+
+    .area {
+      margin-top: 2vh;
+      padding: 2vh 2vw;
+      border: 0.2vw solid #ddd;
+      border-radius: 1vw;
+      background: #fff;
+      box-shadow: 0 0.5vh 1vh rgba(0,0,0,0.05);
+    }
+
+    #controls {
+      margin-bottom: 2vh;
+    }
+
+    button {
+      padding: 1vh 2vw;
+      border: none;
+      border-radius: 0.8vw;
+      background: #3498db;
+      color: #fff;
+      font-size: 1vw;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    button.hidden {
+      display: none;
+    }
+
+    #myInfo {
+      margin: 1.5vh 0;
+      font-weight: bold;
+      font-size: 1.2vw;
+      color: #27ae60;
+    }
+
+    #slots h4 {
+      margin-bottom: 1vh;
+      font-size: 1.3vw;
+      color: #444;
+    }
+
+    .slot {
+      padding: 0.8vh 1vw;
+      margin: 0.8vh 0;
+      border-radius: 0.6vw;
+      background: #ecf0f1;
+      font-size: 1vw;
+      transition: background 0.2s;
+    }
+
+    .slot:hover {
+      background: #dfe6e9;
+    }
+
+    #log {
+      margin-top: 2vh;
+      border-top: 0.2vw solid #ccc;
+      padding-top: 1vh;
+      max-height: 30vh;
+      overflow: auto;
+      font-family: monospace;
+      font-size: 1vw;
+      background: #1e272e;
+      color: #dcdde1;
+      border-radius: 0.6vw;
+    }
+
+    #log div {
+      padding: 0.3vh 0;
+    }
+
+    @media screen and (orientation: portrait) {
+      
+      body {
+        font-size: 4vw;
+      }
+      
+      h2 {
+        font-size: 8vw;
+      }
+
+      button {
+        font-size: 4vw;
+      }
+
+      button.hidden {
+        display: none;
+      }
+
+      #myInfo {
+        font-size: 3vw;
+      }
+
+      #slots h4 {
+        font-size: 5vw;
+      }
+
+      .slot {
+        font-size: 3vw;
+      }
+
+      #log {
+        font-size: 3vw;
+      }
+    }
+
   </style>
 </head>
 <body>
