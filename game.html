@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ito</title>
+<style>
+  body {
+    font-family: sans-serif;
+    height:85vh;
+    width:100%;
+    margin:0;
+    padding:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#f0f0f0;
+    text-align:center;
+  }
+
+  button {
+    border:none;
+    background:#4CAF50;
+    color:white;
+    cursor:pointer;
+    transition: background 0.2s;
+  }
+
+  button:hover { background:#45a049; }
+
+  .card {
+    background:white;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    opacity:0;
+    animation: fadeIn 0.5s forwards;
+    position:relative;
+    z-index:1; /* 後から出すカードを上に */
+  }
+
+  .card:first-child {
+    margin-left:0; /* 最初のカードは左端から */
+  }
+
+  .card .playerLabel {
+    position:absolute;
+    left:0;
+    right:0;
+    text-align:center;
+    color:#555;
+  }
+
+  .card #playerLabel {
+    position:absolute;
+    left:0;
+    right:0;
+    text-align:center;
+    color:#555;
+  }
+
+  .card #playerLabel2 {
+    position:absolute;
+    left:0;
+    right:0;
+    text-align:center;
+    color:#555;
+  }
+
+  #card_area, #card_area2 {
+    display:flex;
+    justify-content:center;
+    position:relative;
+  }
+
+  #revealedLog, #revealedLog2 {
+    display:flex;
+    justify-content:center;
+    position:relative;
+  }
+
+  .hidden { display:none; }
+  
+  .card.wrong {
+    border: 0.5vw solid red; /* 太枠赤 */
+    color: red;              /* 数字文字色も赤 */
+  }
+
+  @keyframes fadeIn {
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* 縦長（portrait） */
+  @media screen and (orientation: portrait) {
+    h1 { font-size:20vh; margin:0 0 20px 0; }
+    h2 { font-size:7vw; }
+    h3 { font-size:5vw; }
+    p { font-size:4vw; }
+    #topic, #resultMessage { font-size:4vw; }
+    #confirmToggle { 
+      width:3vw;
+      height:3vw;
+    }
+    .number_box { font-size:5vw; }
+    button {
+      padding:1vh 2vh;
+      margin:1vh;
+      font-size:2.5vh;
+      border-radius:1vh;
+    }
+    .card {
+      width:16vw;
+      height:24vw;
+      margin-left:-2vw;
+      border-radius:2vw;
+      box-shadow:0 0.8vw 1.6vw rgba(0,0,0,0.2);
+      font-size:9.5vw;
+      transform:translateY(-4vw);
+    }
+    .card #playerLabel {
+      font-size:3vw;
+      top:1vw;
+    }
+    .card #playerLabel2 {
+      font-size:3vw;
+      top:1vw;
+    }
+    .card .playerLabel {
+      font-size:3vw;
+      top:1vw;
+    }
+    #revealedLog { margin-top:4vw; }
+    #revealedLog2 { margin-top:4vw; }
+  }
+
+  /* 横長（landscape） */
+  @media screen and (orientation: landscape) {
+    h1 { font-size:20vw; margin:0 0 20px 0; }
+    h2 { font-size:3vw; }
+    h3 { font-size:2vw; }
+    p { font-size:1.5vw; }
+    #topic, #resultMessage { font-size:1.5vw; }
+    #confirmToggle { 
+      width:1.5vw;
+      height:1.5vw;
+    }
+    .number_box { font-size:3vw; }
+    button {
+      padding:1vw 2vw;
+      margin:1vh;
+      font-size:2.5vw;
+      border-radius:1vw;
+    }
+    .card {
+      width:16vh;
+      height:24vh;
+      margin-left:-2vh;
+      border-radius:2vh;
+      box-shadow:0 0.8vh 1.6vh rgba(0,0,0,0.2);
+      font-size:9.5vh;
+      transform:translateY(-4vw);
+    }
+    .card #playerLabel {
+      font-size:3vh;
+      top:1vh;
+    }
+    .card #playerLabel2 {
+      font-size:3vh;
+      top:1vh;
+    }
+    .card .playerLabel {
+      font-size:3vh;
+      top:1vh;
+    }
+    #revealedLog { margin-top:4vh; }
+    #revealedLog2 { margin-top:4vh; }
+  }
+</style>
+
+</head>
+<body>
+<div id="confirm">
+  <h2 id="confirmTitle">あなたはPです。番号を確認してください。</h2>
+  <div id="card_area">
+    <div class="card">
+      <div id="playerLabel">P</div>
+      <div id="playerCardNumber"></div>
+    </div>
+  </div>
+  <button id="confirmOkBtn">確認</button>
+  <p><span id="confirmed_number">0/0人確認</span></p>
+</div>
+
+<div id="game" class="hidden">
+  <h2>お題</h2>
+  <div id="topic"></div>
+  <h2>場</h2>
+  <div id="revealedLog"></div>
+  <div id="my_card_area">
+    <h2>手札</h2>
+    <div id="card_area2">
+      <div class="card">
+        <div id="playerLabel2">P</div>
+        <div id="playerCardNumber2"></div>
+      </div>
+    </div>
+  </div>
+  <button id="revealCardBtn">手札を公開</button>
+</div>
+
+<div id="result" class="hidden">
+  <h2>ゲーム結果</h2>
+  <div id="resultMessage"></div>
+  <div id="revealedLog2"></div> <!-- 結果画面でも同じカードを表示 -->
+  <br>
+  <button id="restartGameBtn">もう一度遊ぶ</button>
+  <button id="backToStartBtn">最初に戻る</button>
+</div>
+
+
+<div id="log" aria-live="polite"></div>
+
+<script>
+let uid = localStorage.getItem("player_uid");
+const wsBase = (() => {
+  // 適宜サーバーURLに変更してください（http(s) -> ws(s)）
+  const origin = location.origin;
+  if (origin.startsWith("https://")) return "wss://" + location.host + "/ws";
+  if (origin.startsWith("http://")) return "ws://" + location.host + "/ws";
+  return "ws://localhost:10000/ws";
+})();
+let wsUrl = wsBase + (uid ? ("?uid=" + uid) : "");
+const ws = new WebSocket(wsUrl);
+
+const params = new URLSearchParams(window.location.search);
+const userId = params.get("user_id");
+const slot = params.get("slot");
+const len_slot = params.get("len_slot");
+
+const confirmDiv = document.getElementById("confirm");
+const confirmTitle = document.getElementById("confirmTitle");
+const myCard = document.getElementById("card_area");
+const cardLabel = document.getElementById("playerLabel");
+const cardLabel2 = document.getElementById("playerLabel2");
+const cardNumber = document.getElementById("playerCardNumber");
+const cardNumber2 = document.getElementById("playerCardNumber2");
+const confirmSpan = document.getElementById("confirmed_number");
+const confirmOkBtn = document.getElementById("confirmOkBtn");
+const myCard2 = document.getElementById("each_card2");
+const topicDiv = document.getElementById("topic");
+const gameDiv = document.getElementById("game");
+const my_card_area = document.getElementById("my_card_area");
+const revealedLog = document.getElementById("revealedLog");
+const revealCardBtn = document.getElementById("revealCardBtn");
+const resultDiv = document.getElementById("result");
+const resultMessage = document.getElementById("resultMessage");
+const revealedLog2 = document.getElementById("revealedLog2");
+const restartGameBtn = document.getElementById("restartGameBtn");
+const backToStartBtn = document.getElementById("backToStartBtn");
+
+const logDiv = document.getElementById("log");
+
+let confirmTime = true;
+let discussionTime = false;
+let resultTime = false;
+
+function updateUIMode() {
+  if (confirmTime) {
+    confirmDiv.classList.remove("hidden");
+    gameDiv.classList.add("hidden");
+    resultDiv.classList.add("hidden");
+  } else if (discussionTime) {
+    confirmDiv.classList.add("hidden");
+    gameDiv.classList.remove("hidden");
+    resultDiv.classList.add("hidden");
+  } else if (resultTime) {
+    confirmDiv.classList.add("hidden");
+    gameDiv.classList.add("hidden");
+    resultDiv.classList.remove("hidden");
+    // start ボタンは 1P かつゲーム未開始でゲームエリアにいる場合のみ表示
+    if (slot === "1") {
+      restartGameBtn.classList.remove("hidden");
+      backToStartBtn.classList.remove("hidden");
+    } else {
+      restartGameBtn.classList.add("hidden");
+      backToStartBtn.classList.add("hidden");
+    }
+  }
+}
+
+function log(text) {
+  const p = document.createElement("div");
+  p.textContent = text;
+  logDiv.appendChild(p);
+  logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+function revealNumber(slot_number, card_number) {
+  let card = document.createElement("div");
+  card.className = "card";
+  let label = document.createElement("div");
+  label.className = "playerLabel";
+  label.textContent = slot_number + "P";
+  let num = document.createElement("div");
+  num.textContent = card_number;
+  card.appendChild(label);
+  card.appendChild(num);
+  return card;
+}
+
+function revealWrongNumber(slot_number, card_number) {
+  let card = document.createElement("div");
+  card.className = "card";
+  let label = document.createElement("div");
+  label.className = "playerLabel";
+  label.textContent = slot_number + "P";
+  let num = document.createElement("div");
+  num.textContent = card_number;
+  card.appendChild(label);
+  card.appendChild(num);
+  return card;
+}
+
+ws.onopen = () => {
+  ws.send(JSON.stringify({type: "JOIN_GAME_PAGE"}));
+};
+
+ws.onmessage = (ev) => {
+  const msg = JSON.parse(event.data);
+
+  if (msg.type === "RETURN_CAED_NUMBER") {
+    card_number = msg.card_number;
+    cardLabel.textContent = slot + "P";
+    cardNumber.textContent = card_number;
+
+    confirmTitle.textContent = `あなたは${slot}Pです。番号を確認してください。`;
+    confirmSpan.textContent = `0 / ${len_slot} 人確認`;
+  }
+
+  if (msg.type === "RETURN_CONFIRM_NUMBER") {
+    number = msg.number;
+    confirmSpan.textContent = `${number} / ${len_slot} 人確認`;
+  }
+
+  if (msg.type === "START_DISCUSSION_TIME") {
+    confirmTime = false;
+    discussionTime = true;
+    resultTime = false;
+
+    card_number = msg.card_number;
+    cardLabel2.textContent = slot + "P";
+    cardNumber2.textContent = card_number;
+
+    let topic = msg.topic;
+    topicDiv.textContent = topic;
+
+    updateUIMode();
+  }
+
+  if (msg.type === "RETURN_REVEAL_CARD") {
+    slot_number = msg.slot; 
+    card_number = msg.card_number;
+    let card = document.createElement("div");
+    card.className = "card";
+    let label = document.createElement("div");
+    label.className = "playerLabel";
+    label.textContent = slot_number + "P";
+    let num = document.createElement("div");
+    num.textContent = card_number;
+    card.appendChild(label);
+    card.appendChild(num);
+    revealedLog.appendChild(card);
+  }
+
+  if (msg.type === "RETURN_REVEAL_CARDS") {
+    slot_number_list = msg.slot_list;
+    card_number_list = msg.card_number_list;
+    for (let i = 0; i < slot_number_list.length; i++) {
+      slot_number = slot_number_list[i];
+      card_number = card_number_list[i];
+      card = revealNumber(slot_number, card_number);
+      revealedLog.appendChild(card);
+    }
+  }
+
+  if (msg.type === "REVEAL_MY_CARD") {
+    revealCardBtn.classList.add("hidden");
+    my_card_area.classList.add("hidden");
+  }
+
+  if (msg.type === "STOP_DISCUSSION_TIME") {
+    confirmTime = false;
+    discussionTime = false;
+    resultTime = true;
+    slot_number_list = msg.dict.slot_number;
+    card_number_list = msg.dict.card_number;
+    wrong_list = msg.dict.wrong;
+    let success = true;
+    for (let i = 0; i < slot_number_list.length; i++) {
+      slot_number = slot_number_list[i];
+      card_number = card_number_list[i];
+      wrong = wrong_list[i];
+      card = revealNumber(slot_number, card_number);
+      if (wrong) {
+        card.classList.add("wrong");
+        success = false;
+      }
+      revealedLog2.appendChild(card);
+      resultMessage.textContent = success ? "成功！" : "失敗！";
+    }
+    updateUIMode();
+  }
+
+  if (msg.type === "RESTART_GAME") {
+    const url = `${msg.url}?user_id=${msg.user_id}&slot=${msg.slot}&len_slot=${msg.len_slot}`;
+    window.location.href = url;
+  }
+
+   if (msg.type === "BACK_TO_TOP") {
+    const url = `${msg.url}`;
+    window.location.href = url;
+  }
+}
+
+
+confirmOkBtn.onclick = () => {
+  ws.send(JSON.stringify({type: "CONFIRM_MY_NUMBER"}));
+  confirmOkBtn.classList.add("hidden");
+};
+
+revealCardBtn.onclick = () => {
+  ws.send(JSON.stringify({type: "REVEAL_MY_CARD"}));
+  revealCardBtn.classList.add("hidden");
+  my_card_area.classList.add("hidden");
+};
+
+restartGameBtn.onclick = () => {
+  ws.send(JSON.stringify({type: "RESTART_GAME"}));
+};
+
+backToStartBtn.onclick = () => {
+  ws.send(JSON.stringify({type: "BACK_TO_TOP"}));
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
