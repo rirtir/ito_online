@@ -235,6 +235,7 @@
     ws.onopen = () => {
       log("WebSocket 接続");
       // 初期はロビー（特に何もしない）
+      ws.send(JSON.stringify({type: "JOIN_LOBBY"}));
     };
 
     ws.onmessage = (ev) => {

@@ -213,6 +213,7 @@
   <div id="resultMessage"></div>
   <div id="revealedLog2"></div> <!-- 結果画面でも同じカードを表示 -->
   <br>
+  <button id="quitGameBtn">ゲームを抜ける</button>
   <button id="restartGameBtn">もう一度遊ぶ</button>
   <button id="backToStartBtn">最初に戻る</button>
 </div>
@@ -255,6 +256,7 @@ const revealCardBtn = document.getElementById("revealCardBtn");
 const resultDiv = document.getElementById("result");
 const resultMessage = document.getElementById("resultMessage");
 const revealedLog2 = document.getElementById("revealedLog2");
+const quitGameBtn = document.getElementById("quitGameBtn");
 const restartGameBtn = document.getElementById("restartGameBtn");
 const backToStartBtn = document.getElementById("backToStartBtn");
 
@@ -432,6 +434,10 @@ revealCardBtn.onclick = () => {
   ws.send(JSON.stringify({type: "REVEAL_MY_CARD"}));
   revealCardBtn.classList.add("hidden");
   my_card_area.classList.add("hidden");
+};
+
+quitGameBtn.onclick = () => {
+  ws.send(JSON.stringify({type: "QUIT_GAME"}));
 };
 
 restartGameBtn.onclick = () => {

@@ -134,6 +134,72 @@ def register_player(uid, ws: WebSocket, connect: bool, game_area: bool, watch_ar
         "slot_idx": slot,
     }
 
+
+# 全員切断かを確認する関数
+def all_disconnected():
+    # スロットが割り当てられているプレイヤーを抽出
+    assigned_players = [
+        p2 for p2 in app.state.players.values() if p2["slot_idx"] is not None
+    ]
+    
+    # 割り当て済みプレイヤーがいない場合は True
+    if not assigned_players:
+        return True
+
+    # 全員が切断されていれば True
+    return all(not p2["connected"] for p2 in assigned_players)
+
+
+
+async def schedule_disconnect_check(delay_seconds=10):
+    await asyncio.sleep(delay_seconds)  # 猶予時間
+    if all_disconnected():
+        app.state.game_started = False
+        reset_game()
+        print("全員切断状態が続いたためゲームを停止しました")
+
+
+def reset_game():
+    app.state.game = Game()
+
+
+def game_all_clear():
+    for game_uid in app.state.slots:
+        app.state.players[game_uid]["slot_idx"] = False
+        app.state.players[game_uid]["in_game_area"] = False
+        app.state.players[game_uid]["in_watch_area"] = False
+    app.state.slots = []
+    app.state.game_started = False
+    reset_game()
+
+
+def all_clear():
+    app.state.players = {}
+    # ordered list of uids that currently occupy game slots (before/after start)
+    app.state.slots = []  # [uid1, uid2, ...]
+    app.state.game_started = False
+    reset_game()
+
+
+async def remove_player_and_update_slots(p):
+    try:
+        app.state.slots.pop(p["slot_idx"])
+    except Exception:
+        pass
+    # プレイヤーの slot_idx を None にする（IDは消す）
+    p["slot_idx"] = None
+    p["in_game_area"] = False
+    p["in_watch_area"] = False
+    # 再割り当て（slot_idx を更新）
+    for new_idx, each_uid in enumerate(app.state.slots):
+        player_obj = app.state.players.get(each_uid)
+        if player_obj is not None:
+            player_obj["slot_idx"] = new_idx
+    # 通知
+    await notify_slots_update()
+    return 
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -186,6 +252,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 if msg["type"] == "PING":
                     await send_safe_key(websocket, type="PONG")
                     continue
+                
+                # ロビー参加時
+                if msg["type"] == "JOIN_LOBBY":
+                    if app.state.game_started and p["slot_idx"] is not None:
+                        await send_safe(websocket, {"type": "GAME_START", 
+                                                    "url": "./game.html",
+                                                    "user_id": uid,
+                                                    "slot": p["slot_idx"]+1,
+                                                    "len_slot": len(app.state.slots)})
+
 
                 # ENTER_SPECTATE: 観戦エリアへ（slot には触らない）
                 if msg["type"] == "ENTER_SPECTATE":
@@ -322,21 +398,21 @@ async def websocket_endpoint(websocket: WebSocket):
                     if all_reveal:
                         await broadcast_stop_discussion()
 
+                if msg["type"] == "QUIT_GAME":
+                    await send_safe_key(websocket, "BACK_TO_TOP", "url", "./index.html")
+                    await remove_player_and_update_slots(p)
+                    await schedule_disconnect_check(0)
+
+
                 if msg["type"] == "RESTART_GAME":
-                    app.state.game = Game()
+                    reset_game()
                     app.state.game.prepare_game_start(len(app.state.slots), list(app.state.players.keys()))
                     await broadcast_game_restart()
 
                 if msg["type"] == "BACK_TO_TOP":
                     await broadcast("BACK_TO_TOP", "url", "./index.html")
-                    app.state.players = {}
-                    # ordered list of uids that currently occupy game slots (before/after start)
-                    app.state.slots = []  # [uid1, uid2, ...]
-                    app.state.game_started = False
-                    app.state.lock = asyncio.Lock()  # 保護用（軽い排他）
-                    # このスクリプト自身のディレクトリを取得
-                    app.state.base_dir = os.path.dirname(os.path.abspath(__file__))
-                    app.state.game = Game()
+                    game_all_clear()
+                    await notify_slots_update()
 
 
                 # Unknown command -> echo
@@ -351,35 +427,23 @@ async def websocket_endpoint(websocket: WebSocket):
             # 切断の種類で処理を分ける
             p["connected"] = False
             p["ws"] = None
+            print("切断")
             # ゲーム開始前かどうか
             if not app.state.game_started:
                 # 切断したプレイヤーがスロットを占有していたら削除して繰り上げ
                 if p.get("slot_idx") is not None:
-                    idx = p["slot_idx"]
-                    try:
-                        app.state.slots.pop(idx)
-                    except Exception:
-                        pass
-                    # プレイヤーの slot_idx を None にする（IDは消す）
-                    p["slot_idx"] = None
-                    p["in_game_area"] = False
-                    p["in_watch_area"] = False
-                    # 再割り当て（slot_idx を更新）
-                    for new_idx, uid in enumerate(app.state.slots):
-                        player_obj = app.state.players.get(uid)
-                        if player_obj is not None:
-                            player_obj["slot_idx"] = new_idx
-                    # 通知
-                    await notify_slots_update()
+                    await remove_player_and_update_slots(p)
                 else:
                     # そもそもスロット無し（観戦orロビー）なら何もしない
                     pass
             else:
                 # ゲーム開始後の切断は slot を保持（復帰可能）
                 # なのでここでは connected=False にしておくだけでOK
+                # 猶予付き判定をスケジュール
                 await broadcast("PLAYER_DISCONNECTED", "user_id", uid)
+                asyncio.create_task(schedule_disconnect_check())
         return
-    
+
 
 # "static" というフォルダに index.html / game.html を置く
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
